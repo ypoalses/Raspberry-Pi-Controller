@@ -1,0 +1,25 @@
+name: Build Raspberry Pi Zero Image (PM2)
+on:
+  workflow_dispatch:
+  push: { branches: [ main ] }
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y git unzip curl coreutils quilt parted qemu-user-static debootstrap zerofree zip \
+            dosfstools libarchive-tools libcap2-bin grep rsync xz-utils file bc gpg pigz xxd bmap-tools
+      - run: git clone https://github.com/raspberrypi/rpi-image-gen.git
+      - run: |
+          cd rpi-image-gen
+          CONF=$(ls config/*armhf*lite* 2>/dev/null | head -n 1)
+          echo "Using config: $CONF"
+          ./build.sh -c "$CONF" ../sa-image
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rpi-zero-images
+          path: |
+            rpi-image-gen/**/*.img
